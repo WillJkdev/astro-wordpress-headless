@@ -1,0 +1,126 @@
+---
+import { Button } from "@/components/ui/button";
+import Layout from "@/layouts/Layout.astro";
+import { getPost, getAllPostsSlugs } from "@/lib/wp";
+import { ArrowLeft, Calendar, Clock, Share2, User } from "lucide-react";
+
+interface Props {
+  slug: string;
+  title: string;
+  content: string;
+  image: string;
+  author: string;
+  date: string;
+  modified: string;
+}
+
+const slug = (Astro.params as { slug: string }).slug;
+
+if (!slug) {
+  return Astro.redirect("/404");
+}
+
+export async function getStaticPaths() {
+  const slugs = await getAllPostsSlugs();
+  return slugs.map((slug: string) => ({
+    params: { slug },
+  }));
+}
+
+const { title, content, image, date, modified, author } = await getPost(slug);
+---
+
+<Layout title={title} description={content}>
+  <div class="min-h-screen bg-white">
+    {/* Header del artículo */}
+    <header class="relative h-96 overflow-hidden">
+      <img src={image} alt={title} class="w-full h-full object-cover" />
+      <div
+        class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"
+      >
+      </div>
+
+      {/* Botón de volver */}
+      <Button
+        id="back-button"
+        variant="ghost"
+        size="sm"
+        className="absolute top-6 left-6 bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30 cursor-pointer"
+      >
+        <ArrowLeft size={16} className="mr-2" />
+        Volver
+      </Button>
+
+      {/* Botón de compartir */}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="absolute top-6 right-6 bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30"
+      >
+        <Share2 size={16} />
+      </Button>
+
+      {/* Título y metadatos */}
+      <div class="absolute bottom-0 left-0 right-0 p-8">
+        <div class="max-w-4xl mx-auto">
+          <h1
+            class="text-4xl md:text-5xl font-bold text-white mb-4 leading-tight"
+          >
+            {title}
+          </h1>
+
+          <div class="flex flex-wrap items-center gap-6 text-white/90">
+            <div class="flex items-center gap-2">
+              <User size={18} />
+              <span>{author}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <Calendar size={18} />
+              <span>{date}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <Clock size={18} />
+              <span>{modified}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    {/* Contenido del artículo */}
+    <main class="py-12 px-4">
+      <div class="max-w-4xl mx-auto">
+        <article
+          class="prose prose-lg prose-indigo max-w-none"
+          set:html={content}
+        />
+
+        {/* Sección de compartir */}
+        <div class="mt-12 pt-8 border-t border-gray-200">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900 mb-2">
+                ¿Te gustó este artículo?
+              </h3>
+              <p class="text-gray-600">Compártelo con tus amigos y colegas</p>
+            </div>
+            <Button className="bg-indigo-600 hover:bg-indigo-700">
+              <Share2 size={16} className="mr-2" />
+              Compartir
+            </Button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</Layout>
+
+<script is:inline>
+  document.getElementById("back-button")?.addEventListener("click", () => {
+    if (document.referrer && document.referrer.includes(location.host)) {
+      history.back();
+    } else {
+      window.location.href = "/posts";
+    }
+  });
+</script>
